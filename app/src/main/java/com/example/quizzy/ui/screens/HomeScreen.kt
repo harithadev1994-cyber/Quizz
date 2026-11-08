@@ -7,6 +7,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.AccountTree
+import androidx.compose.material.icons.rounded.Functions
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -14,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,7 +46,6 @@ private val BackgroundGradient = Brush.verticalGradient(
 @Composable
 fun HomeScreen() {
 
-    // Currently selected bottom navigation tab
     var selectedTab by rememberSaveable {
         mutableIntStateOf(0)
     }
@@ -43,14 +53,20 @@ fun HomeScreen() {
     val snackbarHostState = remember {
         SnackbarHostState()
     }
+
     val scope = rememberCoroutineScope()
 
-    // Message for features we will implement later
     val showMessage: (String) -> Unit = { message ->
         scope.launch {
             snackbarHostState.showSnackbar(message)
         }
     }
+
+    val tabs = listOf(
+        Triple("Home", Icons.Rounded.Home, 0),
+        Triple("Categories", Icons.Rounded.Category, 1),
+        Triple("Progress", Icons.Rounded.BarChart, 2)
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -59,32 +75,28 @@ fun HomeScreen() {
             SnackbarHost(snackbarHostState)
         },
 
-        // Bottom navigation bar
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White,
-                tonalElevation = 8.dp
+                tonalElevation = 6.dp
             ) {
 
-                val tabs = listOf(
-                    "Home" to "🏠",
-                    "Categories" to "📚",
-                    "Progress" to "📊"
-                )
+                tabs.forEach { tab ->
 
-                tabs.forEachIndexed { index, tab ->
+                    val isSelected = selectedTab == tab.third
 
                     NavigationBarItem(
-                        selected = selectedTab == index,
+                        selected = isSelected,
 
                         onClick = {
-                            selectedTab = index
+                            selectedTab = tab.third
                         },
 
                         icon = {
-                            Text(
-                                text = tab.second,
-                                fontSize = 23.sp
+                            Icon(
+                                imageVector = tab.second,
+                                contentDescription = tab.first,
+                                modifier = Modifier.size(25.dp)
                             )
                         },
 
@@ -92,16 +104,20 @@ fun HomeScreen() {
                             Text(
                                 text = tab.first,
                                 fontWeight =
-                                    if (selectedTab == index)
-                                        FontWeight.Bold
+                                    if (isSelected)
+                                        FontWeight.SemiBold
                                     else
                                         FontWeight.Normal
                             )
                         },
 
+                        alwaysShowLabel = true,
+
                         colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Pink,
                             selectedTextColor = Pink,
                             indicatorColor = Color(0xFFFFE2F0),
+                            unselectedIconColor = Color.Gray,
                             unselectedTextColor = DarkText
                         )
                     )
@@ -111,29 +127,25 @@ fun HomeScreen() {
 
     ) { innerPadding ->
 
-        // Change displayed content when a tab is selected
         when (selectedTab) {
 
             0 -> HomeContent(
                 modifier = Modifier.padding(innerPadding),
+
                 onStartQuiz = {
-                    showMessage(
-                        "Quiz questions are coming in Sprint 3!"
-                    )
+                    showMessage("Quiz feature coming soon!")
                 },
+
                 onCategoryClick = { category ->
-                    showMessage(
-                        "$category quiz is coming soon!"
-                    )
+                    showMessage("$category quiz coming soon!")
                 }
             )
 
             1 -> CategoriesContent(
                 modifier = Modifier.padding(innerPadding),
+
                 onCategoryClick = { category ->
-                    showMessage(
-                        "$category quiz is coming soon!"
-                    )
+                    showMessage("$category quiz coming soon!")
                 }
             )
 
@@ -144,9 +156,9 @@ fun HomeScreen() {
     }
 }
 
-// -----------------------------------
+// ------------------------------------
 // HOME TAB
-// -----------------------------------
+// ------------------------------------
 
 @Composable
 private fun HomeContent(
@@ -231,6 +243,7 @@ private fun HomeContent(
                     ),
                     shape = RoundedCornerShape(16.dp)
                 ) {
+
                     Text(
                         text = "Start Quiz",
                         fontSize = 18.sp,
@@ -267,9 +280,9 @@ private fun HomeContent(
     }
 }
 
-// -----------------------------------
+// ------------------------------------
 // CATEGORIES TAB
-// -----------------------------------
+// ------------------------------------
 
 @Composable
 private fun CategoriesContent(
@@ -308,9 +321,9 @@ private fun CategoriesContent(
     }
 }
 
-// -----------------------------------
+// ------------------------------------
 // PROGRESS TAB
-// -----------------------------------
+// ------------------------------------
 
 @Composable
 private fun ProgressContent(
@@ -329,12 +342,14 @@ private fun ProgressContent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Text(
-                text = "📊",
-                fontSize = 56.sp
+            Icon(
+                imageVector = Icons.Rounded.BarChart,
+                contentDescription = null,
+                tint = Pink,
+                modifier = Modifier.size(60.dp)
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
             Text(
                 text = "Your Progress",
@@ -356,29 +371,53 @@ private fun ProgressContent(
     }
 }
 
-// -----------------------------------
-// SHARED CATEGORY LIST
-// -----------------------------------
+// ------------------------------------
+// CATEGORY LIST
+// ------------------------------------
 
 @Composable
 private fun QuizCategories(
     onCategoryClick: (String) -> Unit
 ) {
 
-    CategoryCard("💻", "Programming", onCategoryClick)
-    CategoryCard("🧠", "Data Structures", onCategoryClick)
-    CategoryCard("⚡", "Algorithms", onCategoryClick)
-    CategoryCard("🗄️", "Databases", onCategoryClick)
-    CategoryCard("🌐", "Networking", onCategoryClick)
+    CategoryCard(
+        icon = Icons.Rounded.Code,
+        title = "Programming",
+        onCategoryClick = onCategoryClick
+    )
+
+    CategoryCard(
+        icon = Icons.Rounded.AccountTree,
+        title = "Data Structures",
+        onCategoryClick = onCategoryClick
+    )
+
+    CategoryCard(
+        icon = Icons.Rounded.Functions,
+        title = "Algorithms",
+        onCategoryClick = onCategoryClick
+    )
+
+    CategoryCard(
+        icon = Icons.Rounded.Storage,
+        title = "Databases",
+        onCategoryClick = onCategoryClick
+    )
+
+    CategoryCard(
+        icon = Icons.Rounded.Public,
+        title = "Networking",
+        onCategoryClick = onCategoryClick
+    )
 }
 
-// -----------------------------------
+// ------------------------------------
 // REUSABLE CATEGORY CARD
-// -----------------------------------
+// ------------------------------------
 
 @Composable
 private fun CategoryCard(
-    emoji: String,
+    icon: ImageVector,
     title: String,
     onCategoryClick: (String) -> Unit
 ) {
@@ -406,10 +445,24 @@ private fun CategoryCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            Text(
-                text = emoji,
-                fontSize = 27.sp
-            )
+            // Material icon instead of emoji
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .background(
+                        color = Color(0xFFFFE2F0),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Pink,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
 
             Spacer(Modifier.width(16.dp))
 
@@ -421,10 +474,12 @@ private fun CategoryCard(
                 modifier = Modifier.weight(1f)
             )
 
-            Text(
-                text = "›",
-                fontSize = 28.sp,
-                color = Pink
+            Icon(
+                imageVector =
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Pink,
+                modifier = Modifier.size(26.dp)
             )
         }
     }
