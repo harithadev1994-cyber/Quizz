@@ -88,7 +88,19 @@ fun QuizzyNavigation() {
 
                 Routes.Home -> NavEntry(route) {
 
-                    HomeScreen()
+                    HomeScreen(
+                        onSignOut = {
+
+                            // Sign out from Firebase
+                            auth.signOut()
+
+                            // Clear navigation history
+                            backStack.clear()
+
+                            // Return to Login screen
+                            backStack.add(Routes.Login)
+                        }
+                    )
                 }
 
                 // -------------------------
