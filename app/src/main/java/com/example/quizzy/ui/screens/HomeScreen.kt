@@ -16,6 +16,8 @@ import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.Functions
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 private val Pink = Color(0xFFFF4FA3)
@@ -44,11 +47,29 @@ private val BackgroundGradient = Brush.verticalGradient(
 )
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onSignOut: () -> Unit
+) {
 
     var selectedTab by rememberSaveable {
         mutableIntStateOf(0)
     }
+
+    var showProfileDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    // Get the signed-in Firebase user
+    val currentUser = FirebaseAuth.getInstance().currentUser
+
+    val displayName = currentUser?.displayName
+        ?.takeIf { it.isNotBlank() }
+        ?: "Quizzy Learner"
+
+    val userEmail = currentUser?.email
+        ?: "No email available"
+
+    val emailVerified = currentUser?.isEmailVerified == true
 
     val snackbarHostState = remember {
         SnackbarHostState()
@@ -132,6 +153,10 @@ fun HomeScreen() {
             0 -> HomeContent(
                 modifier = Modifier.padding(innerPadding),
 
+                onProfileClick = {
+                    showProfileDialog = true
+                },
+
                 onStartQuiz = {
                     showMessage("Quiz feature coming soon!")
                 },
@@ -154,6 +179,25 @@ fun HomeScreen() {
             )
         }
     }
+
+    // Show Firebase account details
+    if (showProfileDialog) {
+
+        ProfileDialog(
+            displayName = displayName,
+            email = userEmail,
+            emailVerified = emailVerified,
+
+            onDismiss = {
+                showProfileDialog = false
+            },
+
+            onSignOut = {
+                showProfileDialog = false
+                onSignOut()
+            }
+        )
+    }
 }
 
 // ------------------------------------
@@ -163,6 +207,7 @@ fun HomeScreen() {
 @Composable
 private fun HomeContent(
     modifier: Modifier = Modifier,
+    onProfileClick: () -> Unit,
     onStartQuiz: () -> Unit,
     onCategoryClick: (String) -> Unit
 ) {
@@ -176,26 +221,48 @@ private fun HomeContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(24.dp))
 
-        Text(
-            text = "Quizzy",
-            fontSize = 42.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Pink,
-            textAlign = TextAlign.Center
-        )
+        // Quizzy header and profile icon
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 
-        Spacer(Modifier.height(8.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
 
-        Text(
-            text = "LEARN • PLAY • MASTER",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 2.sp,
-            color = DarkText,
-            textAlign = TextAlign.Center
-        )
+                Text(
+                    text = "Quizzy",
+                    fontSize = 42.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Pink
+                )
+
+                Text(
+                    text = "LEARN • PLAY • MASTER",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp,
+                    color = DarkText
+                )
+            }
+
+            // Profile button at the top right
+            IconButton(
+                onClick = onProfileClick,
+                modifier = Modifier.size(52.dp)
+            ) {
+
+                Icon(
+                    imageVector = Icons.Rounded.AccountCircle,
+                    contentDescription = "Open my account",
+                    tint = Pink,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
 
         Spacer(Modifier.height(36.dp))
 
@@ -278,6 +345,133 @@ private fun HomeContent(
 
         Spacer(Modifier.height(24.dp))
     }
+}
+
+// ------------------------------------
+// PROFILE ACCOUNT DIALOG
+// ------------------------------------
+
+@Composable
+private fun ProfileDialog(
+    displayName: String,
+    email: String,
+    emailVerified: Boolean,
+    onDismiss: () -> Unit,
+    onSignOut: () -> Unit
+) {
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+
+        icon = {
+            Icon(
+                imageVector = Icons.Rounded.AccountCircle,
+                contentDescription = null,
+                tint = Pink,
+                modifier = Modifier.size(52.dp)
+            )
+        },
+
+        title = {
+            Text(
+                text = "My Account",
+                fontWeight = FontWeight.Bold,
+                color = DarkText
+            )
+        },
+
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(
+                    text = "Display Name",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+
+                Text(
+                    text = displayName,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkText
+                )
+
+                Spacer(Modifier.height(18.dp))
+
+                Text(
+                    text = "Email Address",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+
+                Text(
+                    text = email,
+                    fontSize = 15.sp,
+                    color = DarkText
+                )
+
+                Spacer(Modifier.height(18.dp))
+
+                Text(
+                    text = "Email Verification",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+
+                Text(
+                    text =
+                        if (emailVerified)
+                            "Verified"
+                        else
+                            "Not Verified",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (emailVerified)
+                        Green
+                    else
+                        DarkText
+                )
+            }
+        },
+
+        confirmButton = {
+            TextButton(
+                onClick = onSignOut
+            ) {
+
+                Icon(
+                    imageVector = Icons.Rounded.Logout,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(18.dp)
+                )
+
+                Spacer(Modifier.width(6.dp))
+
+                Text(
+                    text = "Sign Out",
+                    color = Color(0xFFD32F2F),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(
+                    text = "Close",
+                    color = Pink
+                )
+            }
+        },
+
+        shape = RoundedCornerShape(24.dp),
+        containerColor = Color.White
+    )
 }
 
 // ------------------------------------
@@ -445,7 +639,6 @@ private fun CategoryCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // Material icon instead of emoji
             Box(
                 modifier = Modifier
                     .size(46.dp)
